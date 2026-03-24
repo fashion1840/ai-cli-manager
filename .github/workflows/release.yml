@@ -31,13 +31,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
+      - name: List dist directory contents
+        run: ls -la dist/ || dir dist
+        if: always()
+      
       # Windows: Upload all artifacts
       - name: Upload Windows artifacts
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: dist/*.exe
+          path: |
+            dist/*.exe
+            dist/*.blockmap
+            dist/*.yml
+          if-no-files-found: warn
       
       # macOS: Upload all artifacts
       - name: Upload macOS artifacts
@@ -45,7 +53,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-build
-          path: dist/*.dmg
+          path: |
+            dist/*.dmg
+            dist/*.zip
+          if-no-files-found: warn
       
       # Linux: Upload all artifacts
       - name: Upload Linux artifacts
@@ -53,7 +64,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-build
-          path: dist/*.AppImage
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+          if-no-files-found: warn
 
   release:
     needs: build
@@ -79,14 +93,22 @@ jobs:
           name: linux-build
           path: dist/linux
       
+      - name: List downloaded artifacts
+        run: |
+          echo "=== Windows ==="
+          ls -la dist/windows/ || echo "No Windows artifacts"
+          echo "=== macOS ==="
+          ls -la dist/macos/ || echo "No macOS artifacts"
+          echo "=== Linux ==="
+          ls -la dist/linux/ || echo "No Linux artifacts"
+      
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/windows/*.exe
-            dist/macos/*.dmg
-            dist/linux/*.AppImage
-            dist/linux/*.deb
+            dist/windows/**/*
+            dist/macos/**/*
+            dist/linux/**/*
           generate_release_notes: true
           draft: false
           prerelease: false
