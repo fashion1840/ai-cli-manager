@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'  # 当推送 v 开头的标签时触发，如 v1.0.0
+      - 'v*'
 
 jobs:
   build:
@@ -24,7 +24,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       
       - name: Build for ${{ matrix.os }}
         run: npm run build
@@ -32,8 +32,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: List dist directory contents
-        run: ls -la dist/ || dir dist
         if: always()
+        shell: bash
+        run: |
+          echo "=== Dist directory contents ==="
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            cmd //c dir dist
+          else
+            ls -lah dist/
+          fi
       
       # Windows: Upload all artifacts
       - name: Upload Windows artifacts
@@ -41,11 +48,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: |
-            dist/*.exe
-            dist/*.blockmap
-            dist/*.yml
-          if-no-files-found: warn
+          path: dist/
+          if-no-files-found: error
       
       # macOS: Upload all artifacts
       - name: Upload macOS artifacts
@@ -53,10 +57,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-build
-          path: |
-            dist/*.dmg
-            dist/*.zip
-          if-no-files-found: warn
+          path: dist/
+          if-no-files-found: error
       
       # Linux: Upload all artifacts
       - name: Upload Linux artifacts
@@ -64,10 +66,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-build
-          path: |
-            dist/*.AppImage
-            dist/*.deb
-          if-no-files-found: warn
+          path: dist/
+          if-no-files-found: error
 
   release:
     needs: build
@@ -96,19 +96,23 @@ jobs:
       - name: List downloaded artifacts
         run: |
           echo "=== Windows ==="
-          ls -la dist/windows/ || echo "No Windows artifacts"
+          ls -lah dist/windows/ || echo "No Windows artifacts"
           echo "=== macOS ==="
-          ls -la dist/macos/ || echo "No macOS artifacts"
+          ls -lah dist/macos/ || echo "No macOS artifacts"
           echo "=== Linux ==="
-          ls -la dist/linux/ || echo "No Linux artifacts"
+          ls -lah dist/linux/ || echo "No Linux artifacts"
       
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/windows/**/*
-            dist/macos/**/*
-            dist/linux/**/*
+            dist/windows/*.exe
+            dist/windows/*.blockmap
+            dist/windows/*.yml
+            dist/macos/*.dmg
+            dist/macos/*.zip
+            dist/linux/*.AppImage
+            dist/linux/*.deb
           generate_release_notes: true
           draft: false
           prerelease: false
