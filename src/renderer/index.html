@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<title>AI CLI Manager</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">⬡</div>
+        <div class="brand-text">
+          <div class="brand-name">CLI Manager</div>
+          <div class="brand-ver" id="electronVer">Electron</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" id="navDashboard" data-view="dashboard">
+          <span class="nav-icon">▦</span> 工具总览
+        </button>
+        <button class="nav-item" id="navLogs" data-view="logs">
+          <span class="nav-icon">≡</span> 执行日志
+        </button>
+        <button class="nav-item" id="navManage" data-view="manage">
+          <span class="nav-icon">✦</span> 管理工具
+        </button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <button class="sidebar-btn" id="btnRescan">
+          <span id="scanSpinner"></span> 重新扫描
+        </button>
+        <button class="sidebar-btn" id="btnTerminal">
+          打开终端
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="content">
+
+      <!-- Dashboard view -->
+      <div id="view-dashboard" class="view active">
+        <!-- Stats -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-num" id="statTotal">—</div>
+            <div class="stat-label">总工具数</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num green" id="statInstalled">—</div>
+            <div class="stat-label">已安装</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num orange" id="statMissing">—</div>
+            <div class="stat-label">未安装</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num blue" id="statPlatform">—</div>
+            <div class="stat-label">运行平台</div>
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+          <div class="search-wrap">
+            <span class="search-icon">⌕</span>
+            <input type="text" id="searchInput" class="search-input" placeholder="搜索工具名称或命令…">
+          </div>
+          <div class="filter-group">
+            <button class="fbtn active" data-filter="all">全部</button>
+            <button class="fbtn" data-filter="installed">已安装</button>
+            <button class="fbtn" data-filter="missing">未安装</button>
+          </div>
+        </div>
+
+        <!-- List header -->
+        <div class="list-header">
+          <span class="col-icon"></span>
+          <span class="col-name">工具</span>
+          <span class="col-status">状态</span>
+          <span class="col-version">版本</span>
+          <span class="col-mgr">包管理器</span>
+          <span class="col-actions">操作</span>
+        </div>
+
+        <!-- Tool list -->
+        <div class="tool-list" id="toolList">
+          <div class="loading-state" id="loadingState">
+            <div class="spinner"></div>
+            <div class="loading-text">正在扫描 PATH，检测已安装工具…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logs view -->
+      <div id="view-logs" class="view">
+        <div class="logs-toolbar">
+          <span class="logs-title">执行日志</span>
+          <button class="btn-clear-logs" id="btnClearLogs">清除</button>
+        </div>
+        <div class="log-console" id="logConsole">
+          <div class="log-line muted">// 日志将在此处实时显示</div>
+        </div>
+      </div>
+
+      <!-- Manage view -->
+      <div id="view-manage" class="view">
+        <div class="manage-toolbar">
+          <span class="manage-title">工具配置管理</span>
+          <div class="manage-toolbar-actions">
+            <button class="btn-config-path" id="btnConfigPath" title="查看配置文件路径">配置文件路径</button>
+            <button class="btn-open-config" id="btnOpenConfig">用编辑器打开</button>
+            <button class="btn-reset-tools" id="btnResetTools">恢复默认</button>
+            <button class="btn-add-tool" id="btnAddTool">＋ 新增工具</button>
+          </div>
+        </div>
+
+        <!-- Config path display -->
+        <div class="config-path-bar" id="configPathBar" style="display:none">
+          <span class="config-path-label">配置文件：</span>
+          <span class="config-path-text" id="configPathText"></span>
+        </div>
+
+        <!-- Manage list header -->
+        <div class="manage-list-header">
+          <span>图标</span>
+          <span>工具名称</span>
+          <span>命令</span>
+          <span>包名</span>
+          <span>管理器</span>
+          <span>操作</span>
+        </div>
+        <div class="manage-list" id="manageList"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Tool edit modal -->
+  <div class="modal-overlay" id="editModalOverlay">
+    <div class="modal modal-wide" id="editModal">
+      <div class="modal-title" id="editModalTitle">新增工具</div>
+      <div class="edit-form">
+        <div class="form-row">
+          <label>工具名称 <span class="req">*</span></label>
+          <input type="text" id="fName" placeholder="如：My CLI Tool">
+        </div>
+        <div class="form-row">
+          <label>启动命令 <span class="req">*</span></label>
+          <input type="text" id="fCmd" placeholder="如：mytool（PATH 中的命令名）">
+        </div>
+        <div class="form-row">
+          <label>包名 <span class="req">*</span></label>
+          <input type="text" id="fPkg" placeholder="如：my-tool 或 @scope/my-tool">
+        </div>
+        <div class="form-row">
+          <label>包管理器</label>
+          <select id="fMgr">
+            <option value="npm">npm</option>
+            <option value="pip">pip</option>
+            <option value="brew">brew</option>
+            <option value="gh">gh extension</option>
+            <option value="manual">manual（手动安装）</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>图标文字（2字符）</label>
+          <input type="text" id="fLetter" placeholder="如：MT" maxlength="2">
+        </div>
+        <div class="form-row">
+          <label>图标颜色</label>
+          <div class="color-row">
+            <input type="color" id="fColor" value="#6b7280">
+            <span class="color-presets">
+              <span class="cp" data-color="#7c3aed" style="background:#7c3aed"></span>
+              <span class="cp" data-color="#1a73e8" style="background:#1a73e8"></span>
+              <span class="cp" data-color="#059669" style="background:#059669"></span>
+              <span class="cp" data-color="#d97706" style="background:#d97706"></span>
+              <span class="cp" data-color="#be185d" style="background:#be185d"></span>
+              <span class="cp" data-color="#0891b2" style="background:#0891b2"></span>
+              <span class="cp" data-color="#dc2626" style="background:#dc2626"></span>
+              <span class="cp" data-color="#6b7280" style="background:#6b7280"></span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="form-error" id="formError"></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="editCancelBtn">取消</button>
+        <button class="btn btn-primary" id="editSaveBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modalBox">
+      <div class="modal-title">⚠ 确认卸载</div>
+      <div class="modal-body" id="modalBody">确认要卸载此工具吗？</div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="modalCancelBtn">取消</button>
+        <button class="btn btn-danger" id="modalConfirmBtn">确认卸载</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>
