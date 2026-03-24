@@ -169,10 +169,11 @@ echo "✓ 已推送 v$VERSION，GitHub Actions 将自动打包"
 ## ⚠️ 注意事项
 
 1. **首次发布前** 确保 GitHub 仓库已创建
-2. **macOS 签名** - 正式发布的 macOS 应用需要 Apple 开发者证书签名
-3. **Windows 签名** - Windows SmartScreen 可能需要代码签名证书
-4. **构建时间** - 首次构建可能需要 10-20 分钟
-5. **存储空间** - GitHub Actions 提供 6GB 存储空间，足够使用
+2. **修改作者邮箱** - 在 `package.json` 中将 `your-email@example.com` 替换为你的真实邮箱
+3. **macOS 签名** - 正式发布的 macOS 应用需要 Apple 开发者证书签名
+4. **Windows 签名** - Windows SmartScreen 可能需要代码签名证书
+5. **构建时间** - 首次构建可能需要 10-20 分钟
+6. **存储空间** - GitHub Actions 提供 6GB 存储空间，足够使用
 
 ---
 
