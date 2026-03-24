@@ -130,7 +130,6 @@ jobs:
             dist/windows/*.zip
             dist/windows/*.exe
             dist/windows/*.blockmap
-            dist/windows/*.yml
             dist/macos/*.dmg
             dist/macos/*.zip
             dist/linux/*.AppImage
